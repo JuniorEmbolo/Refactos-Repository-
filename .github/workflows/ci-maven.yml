@@ -1,0 +1,38 @@
+name: Java CI avec Maven
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:          # ← te permet de lancer manuellement depuis GitHub
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout le code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 21 (Adoptium/Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build & Package (Maven)
+        run: mvn -B package --file ci-cd_pipeline/pom.xml
+
+      - name: Run tests (si tu en as)
+        run: mvn -B test --file ci-cd_pipeline/pom.xml
+
+      # Bonus : garde le JAR pour le télécharger après
+      - name: Upload JAR artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-jar
+          path: ci-cd_pipeline/target/*.jar
+          retention-days: 5
