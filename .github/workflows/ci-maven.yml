@@ -1,38 +1,41 @@
-name: Java CI avec Maven
+name: Java CI avec Maven       # Nom affiché dans l'onglet Actions
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  workflow_dispatch:          # ← te permet de lancer manuellement depuis GitHub
+on:                           # Quand lancer automatiquement le workflow ?
+  push:                      # → À chaque git push
+    branches: [ main ]      # → Seulement sur la branche main
+  pull_request: # → À chaque pull request (PR)
+    branches: [ main ]     # → vers la branche main
+  workflow_dispatch:       # ← te permet de lancer manuellement depuis GitHub
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
+jobs: # Les "tâches" parallèles (ici une seule)
+  build: # Nom du job (affiché en gros)
+    runs-on: ubuntu-latest #  Machine virtuelle : Linux Ubuntu récent (gratuit)
 
-    steps:
-      - name: Checkout le code
-        uses: actions/checkout@v4
+    steps: # Liste des étapes (exécutées l'une après l'autre)
+      - name: Checkout le code  # Étape 1 : Récupère ton code du repo
+        uses: actions/checkout@v4  # Action officielle GitHub (version 4 = actuelle)
 
       - name: Setup Java 21 (Adoptium/Temurin)
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: 'maven'
+        uses: actions/setup-java@v4   # Installe Java
+        with: # Paramètres
+          java-version: '21'  # Version exacte (peut être 11, 17, 21, 23…)
+          distribution: 'temurin' # Adoptium (ex-AdoptOpenJDK) → fiable et open-source
+          cache: 'maven'  # Cache automatique du dossier ~/.m2 → builds suivants ultra-rapides
 
-      - name: Build & Package (Maven)
+      - name: Build & Package (Maven) # Compile + package le projet → crée le .jar
         run: mvn -B package --file ci-cd_pipeline/pom.xml
+          # -B = batch mode (pas d'interaction)
+        # package = compile + test + jar
+        # --file = chemin vers ton pom.xml (important car il est dans un sous-dossier)
 
-      - name: Run tests (si tu en as)
+      - name: Run tests (si tu en as) # Lance uniquement les tests (optionnel)
         run: mvn -B test --file ci-cd_pipeline/pom.xml
 
       # Bonus : garde le JAR pour le télécharger après
       - name: Upload JAR artifact
-        if: always()
+        if: always()   # Exécute même si le build a échoué (utile pour debug)
         uses: actions/upload-artifact@v4
         with:
-          name: app-jar
-          path: ci-cd_pipeline/target/*.jar
-          retention-days: 5
+          name: app-jar  # Nom visible dans les artifacts
+          path: ci-cd_pipeline/target/*.jar  # Chemin vers le fichier généré
+          retention-days: 5 # Garde 5 jours
